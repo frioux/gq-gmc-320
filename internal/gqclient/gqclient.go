@@ -108,20 +108,17 @@ func (cl Client) Heartbeat() (chan int, error) {
 	return ch, nil
 }
 
-// XXX wtf
-func (cl Client) GetVolt() error {
+func (cl Client) GetVolt() (float32, error) {
 	if _, err := fmt.Fprint(cl.port, "<GETVOLT>>"); err != nil {
-		return err
+		return 0, err
 	}
 
 	buf := make([]byte, 1)
 	if _, err := cl.port.Read(buf); err != nil {
-		return err
+		return 0, err
 	}
 
-	fmt.Println(10 * int(buf[0]))
-
-	return nil
+	return float32(buf[0])/10, nil
 }
 
 // XXX wtf
