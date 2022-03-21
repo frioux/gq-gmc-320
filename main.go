@@ -3,29 +3,46 @@ package main
 import (
 	"fmt"
 
-	"github.com/goburrow/serial"
+	"github.com/frioux/gq-gmc-320/internal/gqclient"
 )
 
 func main() {
-	port, err := serial.Open(&serial.Config{
-		Address: "/dev/ttyUSB0",
-		BaudRate: 115200,
-		Parity: "N",
-	})
+	cl, err := gqclient.New(115200)
 	if err != nil {
 		panic(err)
 	}
-	defer port.Close()
+	defer cl.Close()
 
-	if _, err := fmt.Fprint(port, "<GETVER>>"); err != nil {
+	ver, err := cl.GetVer()
+	if err != nil {
 		panic(err)
 	}
 
-	var n int
-	ver := make([]byte, 14)
-	if n, err = port.Read(ver); err != nil {
+	fmt.Println(ver)
+
+	cpm, err := cl.GetCPM()
+	if err != nil {
 		panic(err)
 	}
+	fmt.Println("cpm", cpm)
 
-	fmt.Println(string(ver[:n]))
+	// fmt.Println(cl.SetDateTime(time.Now()))
+	// fmt.Println(cl.Reboot())
+	// s, err := cl.GetSerial()
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// fmt.Println("serial", s)
+
+	// if err := cl.PowerOff(); err != nil {
+	// 	panic(err)
+	// }
+	// ch, err := cl.Heartbeat()
+	// if err != nil {
+	// 	panic(err)
+	// }
+
+	// for v := range ch {
+	// 	fmt.Println("val", v)
+	// }
 }
