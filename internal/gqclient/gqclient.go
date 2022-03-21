@@ -121,7 +121,6 @@ func (cl Client) GetVolt() (float32, error) {
 	return float32(buf[0])/10, nil
 }
 
-// XXX wtf
 func (cl Client) ReadFlash(a2, a1, a0, l1, l0 byte) ([]byte, error) {
 	cmd := []byte("<SPIR     >>")
 	cmd[5] = a2
@@ -134,7 +133,11 @@ func (cl Client) ReadFlash(a2, a1, a0, l1, l0 byte) ([]byte, error) {
 		return nil, err
 	}
 
-	return nil, nil
+	buf := make([]byte, int(l1) * 256 + int(l0))
+	if _, err := cl.port.Read(buf); err != nil {
+		return nil, err
+	}
+	return buf, nil
 }
 
 func (cl Client) GetCFG() ([]byte, error) {
