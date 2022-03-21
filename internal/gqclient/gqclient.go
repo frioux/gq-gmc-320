@@ -51,7 +51,7 @@ func (cl Client) GetVer() (string, error) {
 }
 
 // GetCPM returns the current CPM.
-func (cl Client) GetCPM() (uint16, error) {
+func (cl Client) GetCPM() (int, error) {
 	if _, err := fmt.Fprint(cl.port, "<GETCPM>>"); err != nil {
 		return 0, err
 	}
@@ -61,8 +61,7 @@ func (cl Client) GetCPM() (uint16, error) {
 		return 0, err
 	}
 
-
-	return uint16(buf[1]), nil
+	return int(buf[0])*256 + int(buf[1]), nil
 }
 
 func (cl Client) heartbeatOn() error {
@@ -75,12 +74,12 @@ func (cl Client) heartbeatOff() error {
 	return err
 }
 
-func (cl Client) Heartbeat() (chan uint16, error) {
+func (cl Client) Heartbeat() (chan int, error) {
 	if err := cl.heartbeatOn(); err != nil {
 		return nil, err
 	}
 
-	ch := make(chan uint16, 10)
+	ch := make(chan int, 10)
 
 	i := 0
 	go func() {
@@ -98,7 +97,7 @@ func (cl Client) Heartbeat() (chan uint16, error) {
 			buf[0] = buf[0] &^ 128
 			buf[0] = buf[0] &^ 64
 			fmt.Println("masked", buf)
-			ch <- uint16(buf[0])<<2 + uint16(buf[1]) // XXX mask off top two bits
+			ch <- int(buf[0])*256 + int(buf[1]) // XXX mask off top two bits
 			if i > 10 {
 				return
 			}
