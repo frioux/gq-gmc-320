@@ -7,20 +7,20 @@ import (
 	"github.com/goburrow/serial"
 )
 
-type Client struct{
+type Client struct {
 	port serial.Port
 }
 
 func New(baudRate int) (Client, error) {
 	var (
-		cl Client
+		cl  Client
 		err error
 	)
 
 	cl.port, err = serial.Open(&serial.Config{
-		Address: "/dev/ttyUSB0",
+		Address:  "/dev/ttyUSB0",
 		BaudRate: baudRate,
-		Parity: "N",
+		Parity:   "N",
 	})
 	if err != nil {
 		return cl, err
@@ -39,7 +39,7 @@ func (cl Client) GetVer() (string, error) {
 	}
 
 	var (
-		n int
+		n   int
 		err error
 	)
 	ver := make([]byte, 14)
@@ -64,48 +64,26 @@ func (cl Client) GetCPM() (int, error) {
 	return int(buf[0])*256 + int(buf[1]), nil
 }
 
-func (cl Client) heartbeatOn() error {
+func (cl Client) HeartbeatOn() error {
 	_, err := fmt.Fprint(cl.port, "<HEARTBEAT1>>")
 	return err
 }
 
-func (cl Client) heartbeatOff() error {
+func (cl Client) HeartbeatOff() error {
 	_, err := fmt.Fprint(cl.port, "<HEARTBEAT0>>")
 	return err
 }
 
-func (cl Client) Heartbeat() (chan int, error) {
-	if err := cl.heartbeatOn(); err != nil {
-		return nil, err
+func (cl Client) ReadHeartBeat() (int, error) {
+	buf := make([]byte, 2)
+	if _, err := cl.port.Read(buf); err != nil {
+		return 0, err
 	}
 
-	ch := make(chan int, 10)
+	buf[0] = buf[0] &^ 128
+	buf[0] = buf[0] &^ 64
 
-	i := 0
-	go func() {
-		defer cl.heartbeatOff()
-		defer close(ch)
-		for {
-			buf := make([]byte, 2)
-			i++
-			if _, err := cl.port.Read(buf); err != nil {
-				fmt.Println("error polling", err)
-				return
-			}
-
-			fmt.Println("raw", buf)
-			buf[0] = buf[0] &^ 128
-			buf[0] = buf[0] &^ 64
-			fmt.Println("masked", buf)
-			ch <- int(buf[0])*256 + int(buf[1]) // XXX mask off top two bits
-			if i > 10 {
-				return
-			}
-
-		}
-	}()
-
-	return ch, nil
+	return int(buf[0])*256 + int(buf[1]), nil
 }
 
 func (cl Client) GetVolt() (float32, error) {
@@ -118,7 +96,7 @@ func (cl Client) GetVolt() (float32, error) {
 		return 0, err
 	}
 
-	return float32(buf[0])/10, nil
+	return float32(buf[0]) / 10, nil
 }
 
 func (cl Client) ReadFlash(a2, a1, a0, l1, l0 byte) ([]byte, error) {
@@ -133,7 +111,7 @@ func (cl Client) ReadFlash(a2, a1, a0, l1, l0 byte) ([]byte, error) {
 		return nil, err
 	}
 
-	buf := make([]byte, int(l1) * 256 + int(l0))
+	buf := make([]byte, int(l1)*256+int(l0))
 	if _, err := cl.port.Read(buf); err != nil {
 		return nil, err
 	}
@@ -236,9 +214,9 @@ func (cl Client) dateSet(which, b byte) error {
 	return cl.hasAck()
 }
 
-func (cl Client) SetYear(year byte) error { return cl.dateSet('Y', year) }
+func (cl Client) SetYear(year byte) error   { return cl.dateSet('Y', year) }
 func (cl Client) SetMonth(month byte) error { return cl.dateSet('M', month) }
-func (cl Client) SetDay(day byte) error { return cl.dateSet('D', day) }
+func (cl Client) SetDay(day byte) error     { return cl.dateSet('D', day) }
 
 func (cl Client) timeSet(which, b byte) error {
 	cmd := []byte("<SETTIME   >>")
@@ -253,7 +231,7 @@ func (cl Client) timeSet(which, b byte) error {
 	return cl.hasAck()
 }
 
-func (cl Client) SetHour(hour byte) error { return cl.timeSet('H', hour) }
+func (cl Client) SetHour(hour byte) error     { return cl.timeSet('H', hour) }
 func (cl Client) SetMinute(minute byte) error { return cl.timeSet('M', minute) }
 func (cl Client) SetSecond(second byte) error { return cl.timeSet('S', second) }
 
@@ -287,7 +265,7 @@ func (cl Client) setDateTime(year, month, day, hour, minute, second byte) error 
 
 func (cl Client) SetDateTime(t time.Time) error {
 	return cl.setDateTime(
-		byte(t.Year() - 2000),
+		byte(t.Year()-2000),
 		byte(t.Month()),
 		byte(t.Day()),
 		byte(t.Hour()),
@@ -320,7 +298,7 @@ func (cl Client) GetDateTime() (time.Time, error) {
 	}
 
 	return time.Date(
-		2000 + int(raw[0]), time.Month(raw[1]), int(raw[2]),
+		2000+int(raw[0]), time.Month(raw[1]), int(raw[2]),
 		int(raw[3]), int(raw[4]), int(raw[5]), 0, time.UTC), nil
 }
 
