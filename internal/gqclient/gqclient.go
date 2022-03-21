@@ -188,7 +188,6 @@ func (cl Client) WriteCFG(a0, d0 byte) error {
 	return cl.hasAck()
 }
 
-// XXX Check this
 func (cl Client) SendKey(k byte) error {
 	cmd := []byte("<KEY >>")
 	cmd[4] = k
